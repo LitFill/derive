@@ -6,8 +6,8 @@ A cli app for auto deriving functions that similar to GHC's deriving system.
 
 Currently supports:
 
-- Show: by `pub fun type-name/show(t : type-name) // : string` (maybe <div>)
-- Eq: by `pub fun type-name/eq(t1, t2) // : bool` (maybe <div>), and operator (==)
+- Show: by `pub fun type-name/show(t : type-name) // : string` (maybe \<div>)
+- Eq: by `pub fun type-name/eq(t1, t2) // : bool` (maybe \<div>), and operator (==)
 
 ## Usage
 
