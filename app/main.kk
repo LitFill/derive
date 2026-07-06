@@ -95,6 +95,7 @@ fun log-info(msg)  log-v("[ info  ] " ++ msg)
 fun log-debug(msg) log-v("[ debug ] " ++ msg)
 fun log-error(msg) log-v("[ error ] " ++ msg)
 
+// TODO: support verbosity levels, change [cond] -> [level]
 fun verbose-logging(cond : bool, action : () -> <console,verbose-logging|e> ()) : <console|e> ()
   with fun log-v(msg) if cond then msg.println
   action()
@@ -102,30 +103,39 @@ fun verbose-logging(cond : bool, action : () -> <console,verbose-logging|e> ()) 
 //========================================
 // Main handler
 //========================================
+
+val usage = r#"derive - auto derive functions for types and structs in koka.
+Usage: derive [options] [FILE]
+
+Options:
+  -i, --input <file>       Input file, could also be argument
+  -o, --output <file>      Output file (defaults to input file)
+  -d, --derivable <kind>   Derivable kind: show (default) or eq
+  -V, --verbose            Verbose output
+  -r, --dry-run            Print result without writing
+  -v, --version            Show version
+  -h, --help               Show this message
+
+Arguments:
+  FILE                     Input file, could also be -i
+"#
+
 fun handle-args(argv : list<string>)
   val flag = parse-args(argv)
+
   with verbose-logging(flag.verbose)
+
   with catch fn(e : exception)
     log-error(e.show)
+
   if flag.version then
     println("derive: v1.0.0")
     return ()
+
   if flag.help then
-    println("derive - auto derive functions for types and structs in koka.")
-    println("Usage: derive [options] [FILE]")
-    println("")
-    println("Options:")
-    println("  -i, --input <file>       Input file, could also be argument")
-    println("  -o, --output <file>      Output file (defaults to input file)")
-    println("  -d, --derivable <kind>   Derivable kind: show (default) or eq")
-    println("  -V, --verbose            Verbose output")
-    println("  -r, --dry-run            Print result without writing")
-    println("  -v, --version            Show version")
-    println("  -h, --help               Show this message")
-    println("")
-    println("Arguments:")
-    println("  FILE                     Input file, could also be -i")
+    usage.println
     return ()
+
   if flag.input.is-empty then
     log-error("no input file specified")
     println("Usage: derive [options] [file]")
@@ -141,9 +151,11 @@ fun handle-args(argv : list<string>)
 
   log-info("Processing " ++ flag.input ++ "...")
   val result = process-file(flag.input)
+
   log-debug("Result (" ++ flag.output ++ "):")
   result.lines.foreach-indexed fn(ix, l)
     log-debug(ix.show.pad-left(4) ++ " | " ++ l)
+
   if flag.dry-run.not then
     write-text-file(flag.output.path, result)
 
