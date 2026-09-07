@@ -97,10 +97,14 @@ fun parse-args(args : list<string>) : _ myflags
         | flag.elem(["--derivable", "--deriving", "-d", "--class", "-c"]) ->
           f := f(derivables=parse-derivables(f.derivables, arg.split(",")))
           loop(rest)
-      Cons(arg) ->
-        f := f(input=arg)
-        if f.output.is-empty then
-          f := f(output=arg)
+      Cons(arg, rest)
+        | arg.starts-with("-").is-just.not ->
+          f := f(input=arg)
+          if f.output.is-empty then
+            f := f(output=arg)
+          loop(rest)
+      Cons(unknown, _) ->
+        throw("unknown option: " ++ unknown)
       Nil -> ()
   loop(args)
   f
