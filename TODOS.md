@@ -1,10 +1,10 @@
 # TODOs
 
-- [P1] Make the directive comment could take multiple arguments [^1]
+- [x] [P1] Make the directive comment could take multiple arguments [^1]
        add space between generated functions
-- [P2] The cli currently derive everything that is in directive comments, it needs to respect the cli flags (`-d`) [^3]
-- [P4] Make the --verbose flag receive int instead of only bool, also add --quiet (?) [^2]
-- [P3] cannot parse `pub {type|struct}`
+- [x] [P2] The cli currently derive everything that is in directive comments, it needs to respect the cli flags (`-d`) [^3]
+- [x] [P4] Make the --verbose flag receive int instead of only bool, also add --quiet (?) [^2]
+- [x] [P3] cannot parse `pub {type|struct}`
 - [  ] add more typeclasses (add, multiply, substract, divide, compare or cmp, map or functor, map2, mapN eg. mapN(1 to 10), ...)
 - [  ] Koka's newtypes support is lacking, maybe we could help it with derive? eg. annotation // derive:newtype or smth?
 
