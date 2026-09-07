@@ -1,6 +1,6 @@
 module sample
 
-type boolean
+pub type boolean
   Benar
   Salah
   Mungkin
