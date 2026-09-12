@@ -156,9 +156,8 @@ fun handle-args(argv : list<string>)
 
   with verbose-logging(flag.verbosity)
 
-
   if flag.version then
-    println("derive: v1.0.0")
+    println("derive: v1.1.2")
     return ()
 
   if flag.help then

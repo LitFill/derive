@@ -5,42 +5,32 @@ pub type boolean
   Salah
   Mungkin
 
-// boolean.derive(show)
-
-// boolean.derive(eq)
+// boolean.derive(show, eq)
 
 struct vector3
   x : int
   y : int
   v : int
 
-// vector3.derive(show)
-
-// vector3.derive(eq)
+// vector3.derive(show, eq)
 
 struct nelist<a>
   head : a
   tail : list<a>
 
-// nelist.derive(show)
-
-// nelist.derive(eq)
+// nelist.derive(show, eq)
 
 type alist<a, b>
   Nil
   Cons(x : tmap<a, b>, xs : alist<a, b>)
 
-// alist.derive(show)
-
-// alist.derive(eq)
+// alist.derive(show, eq)
 
 struct tmap<a, b>
   front : a
   back  : b
 
-// tmap.derive(show)
-
-// tmap.derive(eq)
+// tmap.derive(show, eq)
 
 struct extra-long-tuple<a, b, c, d, e, f, g, h>
   alice : a
@@ -52,9 +42,7 @@ struct extra-long-tuple<a, b, c, d, e, f, g, h>
   gordon : g
   henry : h
 
-// extra-long-tuple.derive(show)
-
-// extra-long-tuple.derive(eq)
+// extra-long-tuple.derive(show, eq)
 
 fun bool/dec(lf, rg, ?cond)
   if cond then lf else rg
