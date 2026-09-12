@@ -18,8 +18,9 @@ Usage: derive [options] [FILE]
 Options:
   -i, --input <file>       Input file, could also be argument
   -o, --output <file>      Output file (defaults to input file)
-  -d, --derivable <kind>   Derivable kind: show (default) or eq
-  -V, --verbose            Verbose output
+  -d, --derivable <kinds>  Comma-separated kinds: show, eq (repeatable)
+  -V, --verbose[=N]        Verbose output (N: 1 info, 2 debug, 3 trace)
+  -q, --quiet              Errors only
   -r, --dry-run            Print result without writing
   -v, --version            Show version
   -h, --help               Show this message

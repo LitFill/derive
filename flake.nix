@@ -24,6 +24,7 @@
 
         buildPhase = ''
           koka -o build/derive app/main.kk
+          chmod +x build/derive
         '';
 
         installPhase = ''
