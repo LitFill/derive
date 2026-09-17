@@ -51,8 +51,11 @@ fun name-p ()
 
 // Optionally consume a `pub` visibility modifier (e.g. `pub type x ...`)
 fun ppub()
-  token("pub")
-  return ()
+  token("pub").ignore
+
+// Optionally consume a `value` modifier (e.g. `pub value struct x ...`)
+fun pvalue()
+  token("value").ignore
 
 pub fun ptype()
   optional((), ppub)
@@ -96,6 +99,7 @@ fun pty()
 
 pub fun pstruct()
   optional((), ppub)
+  optional((), pvalue)
   token("struct")
   val name = name-p()
   val tyargs =
@@ -106,8 +110,17 @@ pub fun pstruct()
           token(",")
       token(">")
       args
-  val fields = many(pfield)
+  val fields = pparamfield || ({many(pfield)})
   mk-struct-data()
+
+fun pparamfield()
+  with lexeme
+  token("(")
+  val fs =
+      with pfield.sep-by
+      token(",")
+  token(")")
+  fs
 
 pub fun run(p, s)
   s.slice.parse(p).either

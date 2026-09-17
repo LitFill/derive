@@ -74,7 +74,7 @@ fun scan-lines(lines : list<string>, i : int, acc : list<definition>) : <exn, fs
     Nothing -> scan-lines(lines, i + 1, acc)
     Just(line) ->
       val is-type        = line.has-prefix("type ") || line.has-prefix("pub type ")
-      val is-struct      = (line.has-prefix("struct ") || line.has-prefix("pub struct ")) && !is-type
+      val is-struct      = (line.has-prefix("struct ") || line.has-prefix("pub struct ") || line.has-prefix("pub value struct")) && !is-type
       val m-derive       = if line.has-prefix("// ") then line.has-derive else Nothing
       if is-type || is-struct then
         val is-type-block = is-type

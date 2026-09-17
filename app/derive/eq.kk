@@ -15,6 +15,7 @@ fun derive-eq-header(nm : string, tvs : list<string>)
   val constraints =
     if tvs.is-empty then "" else
       ", " ++ tvs.map(fn(tv) "?" ++ tv ++ "/(==) : (" ++ tv ++ ", " ++ tv ++ ") -> bool").join(", ")
+
   "pub fun " ++ nm ++ "/eq("
   ++ arg1 ++ " : " ++ type-name ++ ", "
   ++ arg2 ++ " : " ++ type-name

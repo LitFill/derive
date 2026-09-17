@@ -52,3 +52,7 @@ fun bool/(#)(lf, rg, ?cond) bool/dec(lf, rg, cond)
 fun cek-dec()
   val cond = 1 > 0
   "True" # "False"
+
+pub value struct newtype(value : int)
+
+// newtype.derive(show, eq)
