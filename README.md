@@ -13,18 +13,20 @@ Currently supports:
 
 ```
 derive - auto derive functions for types and structs in koka.
-Usage: derive [options] [FILE]
+Usage: derive [options] FILE
 
 Options:
-  -i, --input <file>       Input file, could also be argument
-  -o, --output <file>      Output file (defaults to input file)
-  -d, --derivable <kinds>  Comma-separated kinds: show, eq (repeatable)
-  -V, --verbose[=N]        Verbose output (N: 1 info, 2 debug, 3 trace)
-  -q, --quiet              Errors only
-  -r, --dry-run            Print result without writing
-  -v, --version            Show version
-  -h, --help               Show this message
-
-Arguments:
-  FILE                     Input file, could also be -i
+ -i<file>             --input=file                                      Input file, could also be given as FILE
+ -o<file>             --output=file                                     Output file (defaults to the input file)
+ -d<kinds> -c<kinds>  --derivable=kinds --deriving=kinds --class=kinds  Comma-separated kinds: show, eq (repeatable)
+ -V[N]                --verbose[=N]                                     Verbose output (N: 1 info, 2 debug, 3 trace)
+ -q                   --quiet                                           Errors only
+ -r                   --dry-run                                         Print result without writing
+ -v                   --version                                         Show version
+ -h -?                --help                                            Show this message
 ```
+
+A flag value may be given attached (`-ifile.kk`, `--input=file.kk`) or as the
+next argument (`-i file.kk`, `--input file.kk`); both spellings work. Long
+names may be abbreviated as long as it stays unambiguous, `--` ends the flags,
+and `--no-<name>` turns off a boolean flag. See `derive --help`.

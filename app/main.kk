@@ -17,22 +17,7 @@ inline fun bool/fork(cond, a, b) if cond then a else b
 // Main handler
 //========================================
 
-val usage = r#"derive - auto derive functions for types and structs in koka.
-Usage: derive [options] [FILE]
-
-Options:
-  -i, --input <file>       Input file, could also be argument
-  -o, --output <file>      Output file (defaults to input file)
-  -d, --derivable <kinds>  Comma-separated kinds: show, eq (repeatable)
-  -V, --verbose[=N]        Verbose output (N: 1 info, 2 debug, 3 trace)
-  -q, --quiet              Errors only
-  -r, --dry-run            Print result without writing
-  -v, --version            Show version
-  -h, --help               Show this message
-
-Arguments:
-  FILE                     Input file, could also be -i
-"#
+val version-string = "derive: v1.1.2"
 
 fun handle-args(argv : list<string>)
   with verbose-logging(0)
@@ -44,25 +29,26 @@ fun handle-args(argv : list<string>)
   with verbose-logging(flag.verbosity)
 
   if flag.version then
-    println("derive: v1.1.2")
+    version-string.println
     return ()
 
   if flag.help then
-    usage.println
+    usage-text().println
+    return ()
+
+  if flag.errors.is-nil.not then
+    flag.errors.foreach fn(msg)
+      log-error(msg)
+    usage-text().println
     return ()
 
   if flag.input.is-empty then
     log-error("no input file specified")
-    println("Usage: derive [options] [file]")
+    usage-text().println
     return ()
 
   if flag.verbosity >= 1 then
-    log-info("Received the flags:")
-    log-info("  verbosity = " ++ flag.verbosity.int/show)
-    log-info("  dry-run   = " ++ flag.dry-run.fork("true", "false"))
-    log-info("  input     = " ++ (flag.input || r#""""#))
-    log-info("  output    = " ++ (flag.output || r#""""#))
-    log-info("  derivables= " ++ derivables-show(flag.derivables))
+    log-info("Received the flags: " ++ flag.myflags/show)
 
   log-info("Processing " ++ flag.input ++ "...")
   val result = process-file(flag.input, flag.derivables)
