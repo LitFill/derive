@@ -34,6 +34,56 @@ fun ascii-lower(s : string) : string
 fun derivable-of-name(s : string) : maybe<derivable>
   all-derivables.find(fn(d) d.derivable/name == ascii-lower(s.trim))
 
+// Strip declaration modifiers so the scanner recognizes `pub`, `abstract`,
+// and `value` in any of the usual orders.
+fun strip-attrs(s : string) : string
+  val s1 = if s.has-prefix("pub ") then s.slice.drop(4).string else s
+  val s2 = if s1.has-prefix("abstract ") then s1.slice.drop(9).string else s1
+  val s3 = if s2.has-prefix("value ") then s2.slice.drop(6).string else s2
+  s3
+
+// Delimiter delta for a line, ignoring string and character literals.
+// mode: 0 = normal, 1 = inside a string, 2 = inside a character literal.
+fun delim-scan(cs : list<char>, depth : int, mode : int) : int
+  match cs
+    Nil -> depth
+    Cons(c, rest) ->
+      if mode == 1 then
+        if c == '\\' then
+          match rest
+            Nil -> depth
+            Cons(_, rest2) -> delim-scan(rest2, depth, 1)
+        elif c == '"' then
+          delim-scan(rest, depth, 0)
+        else
+          delim-scan(rest, depth, 1)
+      elif mode == 2 then
+        if c == '\\' then
+          match rest
+            Nil -> depth
+            Cons(_, rest2) -> delim-scan(rest2, depth, 2)
+        elif c == '\'' then
+          delim-scan(rest, depth, 0)
+        else
+          delim-scan(rest, depth, 2)
+      elif c == '/' then
+        match rest
+          Cons('/', _) -> depth
+          _ -> delim-scan(rest, depth, 0)
+      elif c == '"' then
+        delim-scan(rest, depth, 1)
+      elif c == '\'' then
+        delim-scan(rest, depth, 2)
+      elif c == '(' || c == '[' || c == '{' then
+        delim-scan(rest, depth + 1, 0)
+      elif c == ')' || c == ']' || c == '}' then
+        delim-scan(rest, depth - 1, 0)
+      else
+        delim-scan(rest, depth, 0)
+
+fun delim-delta(s : string) : int
+  delim-scan(s.list, 0, 0)
+
 pub fun extract-derive-info(line : string) : (string, list<derivable>)
   match line.split(sep=".derive(")
     Cons(part, Cons(rest, Nil)) ->
@@ -70,12 +120,13 @@ fun scan-lines(lines : list<string>, i : int, acc : list<definition>) : <exn, fs
   match lines[i]
     Nothing -> scan-lines(lines, i + 1, acc)
     Just(line) ->
-      val is-type        = line.has-prefix("type ") || line.has-prefix("pub type ")
-      val is-struct      = (line.has-prefix("struct ") || line.has-prefix("pub struct ") || line.has-prefix("pub value struct")) && !is-type
+      val bare = strip-attrs(line)
+      val is-type = bare.has-prefix("type ")
+      val is-struct = bare.has-prefix("struct ")
       val m-derive       = if line.has-prefix("// ") then line.has-derive else Nothing
       if is-type || is-struct then
         val is-type-block = is-type
-        val (block-lines-rev, j) = collect-block(lines, i + 1, [line])
+        val (block-lines-rev, j) = collect-block(lines, i + 1, [line], delim-delta(line))
         val block-text = block-lines-rev.reverse.join("\n")
         val new-acc =
             if is-type-block then
@@ -96,13 +147,15 @@ fun scan-lines(lines : list<string>, i : int, acc : list<definition>) : <exn, fs
       else
         scan-lines(lines, i + 1, Cons(Other(line), acc))
 
-fun collect-block(lines : list<string>, start : int, rev-lines : list<string>) : <div> (list<string>, int)
+fun collect-block(lines : list<string>, start : int, rev-lines : list<string>, depth : int) : <div> (list<string>, int)
   match lines[start]
     Just(l)
       | l.is-empty ->
-        collect-block(lines, start + 1, rev-lines)
-      | l.has-prefix("  ") -> // isnt this a bit fragile?
-        collect-block(lines, start + 1, Cons(l, rev-lines))
+        collect-block(lines, start + 1, rev-lines, depth)
+      | l.has-prefix("  ") ->
+        collect-block(lines, start + 1, Cons(l, rev-lines), depth + delim-delta(l))
+      | depth > 0 ->
+        collect-block(lines, start + 1, Cons(l, rev-lines), depth + delim-delta(l))
     _ -> (Cons("", rev-lines), start)
 
 // True if the raw kind name must stay in the leftover directive comment:
