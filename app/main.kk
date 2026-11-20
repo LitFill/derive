@@ -7,6 +7,10 @@ import std/os/path
 import app/cli
 import app/derive
 
+extern set-exit-code( code : int ) : () {
+  c inline "(exit(kk_integer_clamp32(#1,kk_context())), kk_Unit)"
+}
+
 //========================================
 // Utilities
 //========================================
@@ -23,6 +27,7 @@ fun handle-args(argv : list<string>)
   with verbose-logging(0)
   with catch fn(e : exception)
     log-error(e.show)
+    set-exit-code(1)
 
   val flag = parse-args(argv)
 
@@ -44,11 +49,13 @@ fun handle-args(argv : list<string>)
     flag.errors.foreach fn(msg)
       log-error(msg)
     usage-text().println
+    set-exit-code(1)
     return ()
 
   if flag.input.is-empty then
     log-error("no input file specified")
     usage-text().println
+    set-exit-code(1)
     return ()
 
   if flag.verbosity >= 1 then
