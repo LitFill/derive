@@ -6,6 +6,8 @@ pub type derivable
   Show
   Eq
 
+pub val all-derivables : list<derivable> = [Show, Eq]
+
 pub fun derivable/show(d : derivable) : string
   match d
     Show -> "Show"

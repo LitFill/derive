@@ -32,10 +32,7 @@ fun ascii-lower(s : string) : string
   s.list.map(fn(c) if c >= 'A' && c <= 'Z' then (c.int + 32).char else c).string
 
 fun derivable-of-name(s : string) : maybe<derivable>
-  match ascii-lower(s.trim)
-    "show" -> Just(Show)
-    "eq"   -> Just(Eq)
-    _      -> Nothing
+  all-derivables.find(fn(d) d.derivable/name == ascii-lower(s.trim))
 
 pub fun extract-derive-info(line : string) : (string, list<derivable>)
   match line.split(sep=".derive(")

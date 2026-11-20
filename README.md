@@ -22,6 +22,7 @@ Options:
  -V[N]                --verbose[=N]                                     Verbose output (N: 1 info, 2 debug, 3 trace)
  -q                   --quiet                                           Errors only
  -r                   --dry-run                                         Print result without writing
+ -l                   --list                                            List supported derivables
  -v                   --version                                         Show version
  -h -?                --help                                            Show this message
 ```

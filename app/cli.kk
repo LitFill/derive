@@ -12,6 +12,7 @@ pub struct myflags
   verbosity  : int              = 0
   version    : bool             = False
   help       : bool             = False
+  list       : bool             = False
   dry-run    : bool             = False
   input      : string           = ""
   output     : string           = ""
@@ -29,6 +30,7 @@ pub fun myflags/show(m : myflags) : string
   ++ "dry-run="   ++ m.dry-run.bool/show  ++ ", "
   ++ "input="     ++ m.input.string/show  ++ ", "
   ++ "output="    ++ m.output.string/show ++ ", "
+  ++ "list="       ++ m.list.bool/show             ++ ", "
   ++ "derivables=" ++ derivables-show(m.derivables) ++ ", "
   ++ "errors="     ++ m.errors.list/show
   ++ ")"
@@ -42,6 +44,9 @@ fun set-version(f : myflags, b : bool) : myflags
 
 fun set-help(f : myflags, b : bool) : myflags
   f(help=b)
+
+fun set-list(f : myflags, b : bool) : myflags
+  f(list=b)
 
 fun set-dry-run(f : myflags, b : bool) : myflags
   f(dry-run=b)
@@ -76,6 +81,7 @@ val flags-spec : list<flag<myflags>>
       Flag( "V",  ["verbose"], Opt(set-verbosity, "N"), "Verbose output (N: 1 info, 2 debug, 3 trace)" ),
       Flag( "q",  ["quiet"],   Bool(set-quiet),         "Errors only" ),
       Flag( "r",  ["dry-run"], Bool(set-dry-run),       "Print result without writing" ),
+      Flag( "l",  ["list"],    Bool(set-list),         "List supported derivables" ),
       Flag( "v",  ["version"], Bool(set-version),       "Show version" ),
       Flag( "h?", ["help"],    Bool(set-help),          "Show this message" ),
     ]
@@ -95,11 +101,12 @@ pub fun usage-text() : string
 pub fun derivables-show(ds : list<derivable>) : string
   "[" ++ ds.map(_.derivable/show).join(", ") ++ "]"
 
+pub fun supported-derivables() : string
+  all-derivables.map(derivable/name).join(", ")
+
 fun parse-derivable(s : string) : maybe<derivable>
-  match s.to-lower
-    "show" -> Just(Show)
-    "eq"   -> Just(Eq)
-    _      -> Nothing
+  val name = s.trim.to-lower
+  all-derivables.find(fn(d) d.derivable/name == name)
 
 fun parse-derivables(acc : list<derivable>, errs : list<string>, parts : list<string>) : (list<derivable>, list<string>)
   match parts

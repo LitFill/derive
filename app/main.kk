@@ -36,6 +36,10 @@ fun handle-args(argv : list<string>)
     usage-text().println
     return ()
 
+  if flag.list then
+    supported-derivables().println
+    return ()
+
   if flag.errors.is-nil.not then
     flag.errors.foreach fn(msg)
       log-error(msg)
