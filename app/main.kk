@@ -61,7 +61,9 @@ fun handle-args(argv : list<string>)
   result.lines.foreach-indexed fn(ix, l)
     log-debug(ix.show.pad-left(4) ++ " | " ++ l)
 
-  if flag.dry-run.not then
+  if flag.dry-run then
+    result.print
+  else
     write-text-file(flag.output.path, result)
 
 fun main()
