@@ -149,20 +149,23 @@ fun takes-next-arg(flag : string, next : string) : bool
     False
 
 fun attach-separated-values(args : list<string>) : list<string>
+  attach-args(args, False)
+
+fun attach-args(args : list<string>, past-terminator : bool) : list<string>
   match args
     Nil -> Nil
     Cons(arg, rest) ->
-      if arg == "--" then
+      if past-terminator || arg == "--" then
         // Past `--` nothing is a flag, so pass the rest through untouched.
-        Cons(arg, rest)
+        Cons(arg, attach-args(rest, True))
       else
         match rest
           Cons(next, rest2) ->
             if takes-next-arg(arg, next) then
-              Cons(attach-value(arg, next), attach-separated-values(rest2))
+              Cons(attach-value(arg, next), attach-args(rest2, False))
             else
-              Cons(arg, attach-separated-values(rest))
-          Nil -> Cons(arg, attach-separated-values(rest))
+              Cons(arg, attach-args(rest, False))
+          Nil -> Cons(arg, Nil)
 
 pub fun parse-args(args : list<string>) : myflags
   val (parsed, positional, errs) = parse(Myflags(), flags-spec, attach-separated-values(args))
