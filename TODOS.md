@@ -11,7 +11,7 @@
       map or functor, map2, mapN eg. mapN(1 to 10), ...)
 - [ ] Koka's newtypes support is lacking, maybe we could help it with derive?
       eg. annotation // derive:newtype or smth?
-- [ ] add -l/--list flag to list supported derivables
+- [x] add -l/--list flag to list supported derivables
 
 [^1]:
     currently it only take one: `// my-type.derive(show)`. I want it to be

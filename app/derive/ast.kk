@@ -6,6 +6,8 @@ pub type derivable
   Show
   Eq
 
+pub val all-derivables : list<derivable> = [Show, Eq]
+
 pub fun derivable/show(d : derivable) : string
   match d
     Show -> "Show"
@@ -34,11 +36,16 @@ pub fun ty/show(Ty(nm : string, tvs : list<ty>)) : div string
   ++ tvs.list/show(ty/show)
   ++ ")"
 
-pub fun ty/to-name(Ty(nm, args))
-  val args' =
-    if args.is-empty then "" else
-      "<" ++ args.map(to-name).join(", ") ++ ">"
-  nm ++ args'
+pub fun ty/to-name(t : ty) : string
+  ty-list/to-name([t], ", ")
+
+// Format a list of types, recursively; structural recursion keeps this total.
+fun ty-list/to-name(ts : list<ty>, sep : string) : string
+  match ts
+    Nil -> ""
+    Cons(Ty(nm, args), rest) ->
+      val args' = if args.is-empty then "" else "<" ++ ty-list/to-name(args, ", ") ++ ">"
+      nm ++ args' ++ (if rest.is-empty then "" else sep ++ ty-list/to-name(rest, sep))
 
 pub struct field
   name : string

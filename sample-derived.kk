@@ -136,3 +136,16 @@ fun bool/(#)(lf, rg, ?cond) bool/dec(lf, rg, cond)
 fun cek-dec()
   val cond = 1 > 0
   "True" # "False"
+
+pub value struct newtype(value : int)
+
+pub fun newtype/show(ne__derived_show : newtype)
+  "Newtype("
+  ++ "value=" ++ ne__derived_show.value.show
+  ++ ")"
+
+pub fun newtype/eq(ne__derived_eq_1 : newtype, ne__derived_eq_2 : newtype)
+  ne__derived_eq_1.value == ne__derived_eq_2.value
+
+pub fun newtype/(==)(x : newtype, y : newtype)
+  newtype/eq(x, y)
