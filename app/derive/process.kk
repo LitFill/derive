@@ -8,9 +8,6 @@ import app/derive/syntax
 import app/derive/show
 import app/derive/eq
 
-// TODO: The type inferer marks match-derive as <div>, but it should be total
-//       Investigate why mutable variables in with/map cause div inference
-
 //========================================
 // Definition processing pipeline
 //========================================
@@ -117,35 +114,30 @@ pub fun scan-file(fname : string) : <exn, fsys, div> list<definition>
 fun scan-lines(lines : list<string>, i : int, acc : list<definition>) : <exn, fsys, div> list<definition>
   if i >= lines.length then
     return acc.reverse
-  match lines[i]
-    Nothing -> scan-lines(lines, i + 1, acc)
-    Just(line) ->
-      val bare = strip-attrs(line)
-      val is-type = bare.has-prefix("type ")
-      val is-struct = bare.has-prefix("struct ")
-      val m-derive       = if line.has-prefix("// ") then line.has-derive else Nothing
-      if is-type || is-struct then
-        val is-type-block = is-type
-        val (block-lines-rev, j) = collect-block(lines, i + 1, [line], delim-delta(line))
-        val block-text = block-lines-rev.reverse.join("\n")
-        val new-acc =
-            if is-type-block then
-              match ptype.run(block-text)
-                Right(td : type-data) -> Cons(Type-def(td, block-text), acc)
-                Left(_) -> block-lines-rev.foldl(acc) fn(ds, l) Cons(Other(l), ds)
-            else
-              match pstruct.run(block-text)
-                Right(sd : struct-data) -> Cons(Struct-def(sd, block-text), acc)
-                Left(_) -> block-lines-rev.foldl(acc) fn(ds, l) Cons(Other(l), ds)
-        scan-lines(lines, j, new-acc)
-      elif m-derive.is-just then
-        match m-derive
-          Just(ds) ->
-            val (name, _) = extract-derive-info(line)
-            scan-lines(lines, i + 1, Cons(Derive-line(i, name, ds, line), acc))
-          Nothing -> scan-lines(lines, i + 1, acc)
+  val line = lines[i].default("")
+  val bare = strip-attrs(line)
+  val is-type = bare.has-prefix("type ")
+  val is-struct = bare.has-prefix("struct ")
+  val m-derive = if line.has-prefix("// ") then line.has-derive else Nothing
+  if is-type || is-struct then
+    val (block-lines-rev, j) = collect-block(lines, i + 1, [line], delim-delta(line))
+    val block-text = block-lines-rev.reverse.join("\n")
+    val new-acc =
+      if is-type then
+        match ptype.run(block-text)
+          Right(td : type-data) -> Cons(Type-def(td, block-text), acc)
+          Left(_) -> block-lines-rev.foldl(acc) fn(ds, l) Cons(Other(l), ds)
       else
-        scan-lines(lines, i + 1, Cons(Other(line), acc))
+        match pstruct.run(block-text)
+          Right(sd : struct-data) -> Cons(Struct-def(sd, block-text), acc)
+          Left(_) -> block-lines-rev.foldl(acc) fn(ds, l) Cons(Other(l), ds)
+    scan-lines(lines, j, new-acc)
+  else
+    match m-derive
+      Just(ds) ->
+        val (name, _) = extract-derive-info(line)
+        scan-lines(lines, i + 1, Cons(Derive-line(i, name, ds, line), acc))
+      Nothing -> scan-lines(lines, i + 1, Cons(Other(line), acc))
 
 fun collect-block(lines : list<string>, start : int, rev-lines : list<string>, depth : int) : <div> (list<string>, int)
   match lines[start]
@@ -165,40 +157,36 @@ fun kind-kept(s : string, requested : list<derivable>) : bool
     Nothing -> True
     Just(d) -> requested.any(fn(c) c.derivable/name == d.derivable/name).not
 
-pub fun match-derive(defs : list<definition>, cli : list<derivable>)
-  var last-td := Nothing
-  var last-sd := Nothing
-  var last-block := ""
-  with d <- defs.flatmap
+// What the most recent type/struct definition was. A derive directive applies
+// to the nearest preceding definition, even across blank/comment lines.
+type def-context
+  No-context
+  Type-context(td : type-data)
+  Struct-context(sd : struct-data)
+
+fun derive-one(st : def-context, k : derivable, ix : int, nm : string) : list<definition>
+  match st
+    Type-context(td) | td.name == nm ->
+      match k
+        Show -> [DerivedTypeDef(td, ix, td.show/derive)]
+        app/derive/ast/Eq -> [DerivedTypeDef(td, ix, td.eq/derive)]
+    Struct-context(sd) | sd.name == nm ->
+      match k
+        Show -> [DerivedStructDef(sd, ix, sd.show/derive)]
+        app/derive/ast/Eq -> [DerivedStructDef(sd, ix, sd.eq/derive)]
+    _ -> []
+
+fun match-step(st : def-context, d : definition, cli : list<derivable>) : (list<definition>, def-context)
   match d
-    Type-def(td, block) ->
-      last-td := Just(td)
-      last-sd := Nothing
-      last-block := block
-      [d]
-    Struct-def(sd, block) ->
-      last-td := Nothing
-      last-sd := Just(sd)
-      last-block := block
-      [d]
+    Type-def(td, _) ->
+      ([d], Type-context(td))
+    Struct-def(sd, _) ->
+      ([d], Struct-context(sd))
     Derive-line(ix, nm, ds, rawline) ->
       val requested =
         if cli.is-empty then ds
         else ds.filter(fn(k) cli.any(fn(c) c.derivable/name == k.derivable/name))
-      fun derive1(k)
-        match last-td
-          Just(td) | td.name == nm ->
-            match k
-              Show -> [DerivedTypeDef(td, ix, td.show/derive)]
-              app/derive/ast/Eq -> [DerivedTypeDef(td, ix, td.eq/derive)]
-          _ ->
-            match last-sd
-              Just(sd) | sd.name == nm ->
-                match k
-                  Show -> [DerivedStructDef(sd, ix, sd.show/derive)]
-                  app/derive/ast/Eq   -> [DerivedStructDef(sd, ix, sd.eq/derive)]
-              _ -> []
-      val derived = requested.flatmap(derive1)
+      val derived = requested.flatmap(fn(k) derive-one(st, k, ix, nm))
       val leftover =
         if derived.is-empty then [Other(rawline)]
         else
@@ -206,8 +194,15 @@ pub fun match-derive(defs : list<definition>, cli : list<derivable>)
             .filter(fn(s) s.is-empty.not)
             .filter(fn(s) kind-kept(s, requested))
           if kept.is-empty then [] else [Other("// " ++ nm ++ ".derive(" ++ kept.join(", ") ++ ")")]
-      leftover ++ derived
-    other -> [other]
+      (leftover ++ derived, st)
+    other ->
+      ([other], st)
+
+pub fun match-derive(defs : list<definition>, cli : list<derivable>) : list<definition>
+  val (_, rev) = defs.foldl((No-context, [])) fn((st, acc), d)
+    val (out, next-st) = match-step(st, d, cli)
+    (next-st, out.foldl(acc) fn(a, x) Cons(x, a))
+  rev.reverse
 
 pub fun reassemble(defs : list<definition>) : string
   fun piece(d : definition, prev-derived : bool) : (string, bool)
