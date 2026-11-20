@@ -151,6 +151,35 @@
               has "/show" show.kk
               has "// boolean.derive(eq)" show.kk
 
+              # default parameter values, function types, and multi-line parens
+              cat > defaults.kk <<'EOF'
+struct config(
+  verbose : bool = False,
+  name : string = ""
+)
+
+// config.derive(show, eq)
+
+type state<a>
+  Empty
+  Values(value : a, values : list<a> = [])
+  Waiting(listener : a -> ioc (), listeners : list<a -> ioc ()> = [])
+
+// state.derive(show, eq)
+
+abstract value struct point(x : int = 0, y : int = 0)
+
+// point.derive(show, eq)
+EOF
+              $derive -i defaults.kk -o defaults-out.kk
+              has "co__derived_show.verbose" defaults-out.kk
+              has "co__derived_show.name" defaults-out.kk
+              has "co__derived_eq_1.verbose == co__derived_eq_2.verbose" defaults-out.kk
+              has "Values(value=" defaults-out.kk
+              has "Waiting(listener=" defaults-out.kk
+              has "po__derived_show.x" defaults-out.kk
+              has "po__derived_show.y" defaults-out.kk
+
               # repeated and comma-separated kinds both select show+eq
               $derive -d show -d eq -i "$sample" -o repeated.kk
               diff "$expected" repeated.kk || fail "repeated -d"
