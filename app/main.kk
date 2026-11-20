@@ -23,6 +23,28 @@ inline fun bool/fork(cond, a, b) if cond then a else b
 
 val version-string = "derive: v1.1.2"
 
+// What the flags ask us to do; the order here is the precedence.
+type cli-action
+  Show-version
+  Show-help
+  Show-list
+  Usage-error(errs : list<string>)
+  Process(flag : myflags)
+
+fun classify-flags(flag : myflags) : cli-action
+  if flag.version then
+    Show-version
+  elif flag.help then
+    Show-help
+  elif flag.list then
+    Show-list
+  elif flag.errors.is-nil.not then
+    Usage-error(flag.errors)
+  elif flag.input.is-empty then
+    Usage-error([ "no input file specified" ])
+  else
+    Process(flag)
+
 fun handle-args(argv : list<string>)
   with verbose-logging(0)
   with catch fn(e : exception)
@@ -33,45 +55,30 @@ fun handle-args(argv : list<string>)
 
   with verbose-logging(flag.verbosity)
 
-  if flag.version then
-    version-string.println
-    return ()
-
-  if flag.help then
-    usage-text().println
-    return ()
-
-  if flag.list then
-    supported-derivables().println
-    return ()
-
-  if flag.errors.is-nil.not then
-    flag.errors.foreach fn(msg)
-      log-error(msg)
-    usage-text().println
-    set-exit-code(1)
-    return ()
-
-  if flag.input.is-empty then
-    log-error("no input file specified")
-    usage-text().println
-    set-exit-code(1)
-    return ()
-
-  if flag.verbosity >= 1 then
-    log-info("Received the flags: " ++ flag.myflags/show)
-
-  log-info("Processing " ++ flag.input ++ "...")
-  val result = process-file(flag.input, flag.derivables)
-
-  log-debug("Result (" ++ flag.output ++ "):")
-  result.lines.foreach-indexed fn(ix, l)
-    log-debug(ix.show.pad-left(4) ++ " | " ++ l)
-
-  if flag.dry-run then
-    result.print
-  else
-    write-text-file(flag.output.path, result)
+  match classify-flags(flag)
+    Show-version ->
+      version-string.println
+    Show-help ->
+      usage-text().println
+    Show-list ->
+      supported-derivables().println
+    Usage-error(errs) ->
+      errs.foreach fn(msg)
+        log-error(msg)
+      usage-text().println
+      set-exit-code(1)
+    Process(flag) ->
+      if flag.verbosity >= 1 then
+        log-info("Received the flags: " ++ flag.myflags/show)
+      log-info("Processing " ++ flag.input ++ "...")
+      val result = process-file(flag.input, flag.derivables)
+      log-debug("Result (" ++ flag.output ++ "):")
+      result.lines.foreach-indexed fn(ix, l)
+        log-debug(ix.show.pad-left(4) ++ " | " ++ l)
+      if flag.dry-run then
+        result.print
+      else
+        write-text-file(flag.output.path, result)
 
 fun main()
   val args = get-args()
