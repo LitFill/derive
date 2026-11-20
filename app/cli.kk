@@ -24,15 +24,15 @@ pub struct myflags
 
 pub fun myflags/show(m : myflags) : string
   "Myflags("
-  ++ "verbosity="  ++ m.verbosity.int/show          ++ ", "
-  ++ "version="    ++ m.version.bool/show           ++ ", "
-  ++ "help="       ++ m.help.bool/show              ++ ", "
-  ++ "dry-run="    ++ m.dry-run.bool/show           ++ ", "
-  ++ "input="      ++ m.input.string/show           ++ ", "
-  ++ "output="     ++ m.output.string/show          ++ ", "
-  ++ "list="       ++ m.list.bool/show              ++ ", "
+  ++ "verbosity="  ++ m.verbosity.show          ++ ", "
+  ++ "version="    ++ m.version.show           ++ ", "
+  ++ "help="       ++ m.help.show              ++ ", "
+  ++ "dry-run="    ++ m.dry-run.show           ++ ", "
+  ++ "input="      ++ m.input.show           ++ ", "
+  ++ "output="     ++ m.output.show          ++ ", "
+  ++ "list="       ++ m.list.show              ++ ", "
   ++ "derivables=" ++ derivables-show(m.derivables) ++ ", "
-  ++ "errors="     ++ m.errors.list/show
+  ++ "errors="     ++ m.errors.show
   ++ ")"
 
 // The setters must be total: `parse` demands `(a, string) -> a` and
@@ -99,7 +99,7 @@ pub fun usage-text() : string
 //========================================
 
 pub fun derivables-show(ds : list<derivable>) : string
-  "[" ++ ds.map(_.derivable/show).join(", ") ++ "]"
+  "[" ++ ds.map(_.show).join(", ") ++ "]"
 
 pub fun supported-derivables() : string
   all-derivables.map(derivable/name).join(", ")

@@ -168,12 +168,12 @@ fun derive-one(st : def-context, k : derivable, ix : int, nm : string) : list<de
   match st
     Type-context(td) | td.name == nm ->
       match k
-        Show -> [DerivedTypeDef(td, ix, td.show/derive)]
-        app/derive/ast/Eq -> [DerivedTypeDef(td, ix, td.eq/derive)]
+        Show   -> [DerivedTypeDef(td, ix, td.show/derive)]
+        ast/Eq -> [DerivedTypeDef(td, ix, td.eq/derive)]
     Struct-context(sd) | sd.name == nm ->
       match k
-        Show -> [DerivedStructDef(sd, ix, sd.show/derive)]
-        app/derive/ast/Eq -> [DerivedStructDef(sd, ix, sd.eq/derive)]
+        Show   -> [DerivedStructDef(sd, ix, sd.show/derive)]
+        ast/Eq -> [DerivedStructDef(sd, ix, sd.eq/derive)]
     _ -> []
 
 fun match-step(st : def-context, d : definition, cli : list<derivable>) : (list<definition>, def-context)

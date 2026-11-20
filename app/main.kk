@@ -12,12 +12,6 @@ extern set-exit-code( code : int ) : () {
 }
 
 //========================================
-// Utilities
-//========================================
-
-inline fun bool/fork(cond, a, b) if cond then a else b
-
-//========================================
 // Main handler
 //========================================
 
@@ -63,22 +57,21 @@ fun handle-args(argv : list<string>)
     Show-list ->
       supported-derivables().println
     Usage-error(errs) ->
-      errs.foreach fn(msg)
-        log-error(msg)
+      errs.foreach(log-error(_))
       usage-text().println
       set-exit-code(1)
-    Process(flag) ->
-      if flag.verbosity >= 1 then
-        log-info("Received the flags: " ++ flag.myflags/show)
+    Process(flag') ->
+      if flag'.verbosity >= 1 then
+        log-info("Received the flags: " ++ flag'.show)
       log-info("Processing " ++ flag.input ++ "...")
-      val result = process-file(flag.input, flag.derivables)
-      log-debug("Result (" ++ flag.output ++ "):")
+      val result = process-file(flag'.input, flag'.derivables)
+      log-debug("Result (" ++ flag'.output ++ "):")
       result.lines.foreach-indexed fn(ix, l)
         log-debug(ix.show.pad-left(4) ++ " | " ++ l)
-      if flag.dry-run then
+      if flag'.dry-run then
         result.print
       else
-        write-text-file(flag.output.path, result)
+        write-text-file(flag'.output.path, result)
 
 fun main()
   val args = get-args()
