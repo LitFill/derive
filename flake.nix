@@ -20,7 +20,7 @@
       packages = forAllSystems (pkgs: rec {
         derive = pkgs.stdenv.mkDerivation {
           pname = "derive";
-          version = "1.1.2";
+          version = "1.2.0";
           src = self;
 
           nativeBuildInputs = with pkgs; [
@@ -117,7 +117,7 @@
               }
 
               # --version and --list
-              [ "$($derive --version)" = "derive: v1.1.2" ] || fail "--version"
+              [ "$($derive --version)" = "derive: v1.2.0" ] || fail "--version"
               [ "$($derive --list)" = "show, eq" ] || fail "--list"
               $derive --version > /dev/null
               $derive --list > /dev/null

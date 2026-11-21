@@ -15,7 +15,7 @@ extern set-exit-code( code : int ) : () {
 // Main handler
 //========================================
 
-val version-string = "derive: v1.1.2"
+val version-string = "derive: v1.2.0"
 
 // What the flags ask us to do; the order here is the precedence.
 type cli-action
