@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # koki:inputs:start
+    util-kk.url = "github:LitFill/util-kk";
     # koki:inputs:end
   };
 
@@ -26,6 +27,7 @@
       # derived from them, so they cannot drift out of step with each other.
       kokaLibsFor = pkgs: [
         # koki:libs:start
+        "${self.inputs.util-kk.packages.${pkgs.stdenv.hostPlatform.system}.default}/share/koka/${pkgs.koka.version}"
         # koki:libs:end
       ];
 

@@ -2,6 +2,8 @@ module app/derive/syntax
 
 import std/text/parse
 
+import util
+
 import app/derive/ast
 
 //========================================
@@ -15,35 +17,9 @@ fun is-keyword(s : string) : bool
   with k <- keywords.any
   k == s
 
-// Konsumsi whitespace (termasuk spasi, tab, dan newline) secara eksplisit
-fun whitespace-char()
-  [ { char(' ')  }
-  , { char('\t') }
-  , { char('\n') }
-  , { char('\r') }
-  ] .choose
-
-fun whitespace-char'()
-  with return(xs) xs.choose
-  with c <- [' ', '\t', '\n', '\r'].map
-  return
-    char(c)
-
-pub fun lex/ws()
-  many(whitespace-char).ignore
-
-pub fun lex/lexeme(p : () -> <parse|e> a) : <parse|e> a
-  val res = p()
-  lex/ws()
-  res
-
-pub fun lex/token(s :string)
-  with lexeme
-  pstring(s)
-
 // Pastikan nama bukan merupakan bagian dari kata kunci (keywords)
 fun name-p ()
-  with lexeme
+  with lex
   val nm = none-of-many1(" \r\t\n\"'()<>,.")
   if nm.is-keyword then
     fail("tidak boleh menggunakan kata kunci sebagai nama: " ++ nm)
@@ -142,7 +118,7 @@ fun skip-angle-acc(depth : int)
       if c == '<' then
         skip-angle-acc(depth + 1)
       elif c == '>' then
-        if depth == 1 then lex/ws() else skip-angle-acc(depth - 1)
+        if depth == 1 then whitespace0().ignore else skip-angle-acc(depth - 1)
       else
         skip-angle-acc(depth)
 
@@ -193,7 +169,7 @@ fun pfield(stop : (char) -> bool)
   if peek-string("=") then
     token("=")
     skip-default(stop, 0)
-    lex/ws()
+    whitespace0().ignore
   mk-field()
 
 fun pfield-comma()
@@ -240,7 +216,7 @@ pub fun pstruct()
   mk-struct-data()
 
 fun pparamfield()
-  with lexeme
+  with lex
   token("(")
   val fs =
       with pfield-comma.sep-by
@@ -248,5 +224,5 @@ fun pparamfield()
   token(")")
   fs
 
-pub fun run(p, s)
-  s.slice.parse-eof(fn() { val x = p(); lex/ws(); x }).either
+pub fun run(p : parser<e, a>, s : string) : e either<string, a>
+  parser/run(s, fn() { val x = p(); whitespace0().ignore; eof(); x })

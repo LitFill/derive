@@ -3,6 +3,8 @@ module app/derive/process
 import std/os/file
 import std/os/path
 
+import util
+
 import app/derive/ast
 import app/derive/syntax
 import app/derive/show
@@ -20,23 +22,15 @@ pub type definition
   Derive-line(line : int, name : string, derivables : list<derivable>, raw-line : string)
   Other(content : string)
 
-pub fun has-prefix(s : string, p : string) : bool
-  s.list.length >= p.list.length &&
-  s.list.take(p.list.length) == p.list
-
-// Lowercase an ASCII string, so directive kinds can be case-insensitive
-fun ascii-lower(s : string) : string
-  s.list.map(fn(c) if c >= 'A' && c <= 'Z' then (c.int + 32).char else c).string
-
 fun derivable-of-name(s : string) : maybe<derivable>
-  all-derivables.find(fn(d) d.derivable/name == ascii-lower(s.trim))
+  all-derivables.find(fn(d) d.derivable/name == s.trim.to-lower)
 
 // Strip declaration modifiers so the scanner recognizes `pub`, `abstract`,
 // and `value` in any of the usual orders.
 fun strip-attrs(s : string) : string
-  val s1 = if s.has-prefix("pub ") then s.slice.drop(4).string else s
-  val s2 = if s1.has-prefix("abstract ") then s1.slice.drop(9).string else s1
-  val s3 = if s2.has-prefix("value ") then s2.slice.drop(6).string else s2
+  val s1 = if s.starts-with("pub ").is-just then s.slice.drop(4).string else s
+  val s2 = if s1.starts-with("abstract ").is-just then s1.slice.drop(9).string else s1
+  val s3 = if s2.starts-with("value ").is-just then s2.slice.drop(6).string else s2
   s3
 
 // Delimiter delta for a line, ignoring string and character literals.
@@ -87,7 +81,7 @@ pub fun extract-derive-info(line : string) : (string, list<derivable>)
       val content = match rest.split(sep=")")
         Cons(head, _) -> head
         Nil -> ""
-      val ds = content.split(sep=",").filter-map(derivable-of-name)
+      val ds = content.split(sep=",").map-maybe(derivable-of-name)
       (part.list.drop(2).string.trim, ds)
     _ -> ("", [])
 
@@ -116,9 +110,9 @@ fun scan-lines(lines : list<string>, i : int, acc : list<definition>) : <exn, fs
     return acc.reverse
   val line = lines[i].default("")
   val bare = strip-attrs(line)
-  val is-type = bare.has-prefix("type ")
-  val is-struct = bare.has-prefix("struct ")
-  val m-derive = if line.has-prefix("// ") then line.has-derive else Nothing
+  val is-type = bare.starts-with("type ").is-just
+  val is-struct = bare.starts-with("struct ").is-just
+  val m-derive = if line.starts-with("// ").is-just then line.has-derive else Nothing
   if is-type || is-struct then
     val (block-lines-rev, j) = collect-block(lines, i + 1, [line], delim-delta(line))
     val block-text = block-lines-rev.reverse.join("\n")
@@ -144,7 +138,7 @@ fun collect-block(lines : list<string>, start : int, rev-lines : list<string>, d
     Just(l)
       | l.is-empty ->
         collect-block(lines, start + 1, rev-lines, depth)
-      | l.has-prefix("  ") ->
+      | l.starts-with("  ").is-just ->
         collect-block(lines, start + 1, Cons(l, rev-lines), depth + delim-delta(l))
       | depth > 0 ->
         collect-block(lines, start + 1, Cons(l, rev-lines), depth + delim-delta(l))
@@ -193,7 +187,7 @@ fun match-step(st : def-context, d : definition, cli : list<derivable>) : (list<
           val kept = derive-raw(rawline).split(",").map(fn(s) s.trim)
             .filter(fn(s) s.is-empty.not)
             .filter(fn(s) kind-kept(s, requested))
-          if kept.is-empty then [] else [Other("// " ++ nm ++ ".derive(" ++ kept.join(", ") ++ ")")]
+          if kept.is-empty then [] else [Other("// %1.derive(%2)"%^[nm, kept.join(", ")])]
       (leftover ++ derived, st)
     other ->
       ([other], st)
