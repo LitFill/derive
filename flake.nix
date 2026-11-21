@@ -141,7 +141,7 @@
 
             # --version and --list
             [ "$($derive --version)" = "derive: v1.2.0" ] || fail "--version"
-            [ "$($derive --list)" = "show, eq" ] || fail "--list"
+            [ "$($derive --list)" = "show, eq, cmp" ] || fail "--list"
             $derive --version > /dev/null
             $derive --list > /dev/null
 
@@ -171,8 +171,9 @@
             # -d show keeps show only and rewrites the directive
             $derive -d show -i "$sample" -o show.kk
             hasnt "/eq" show.kk
+            hasnt "/cmp" show.kk
             has "/show" show.kk
-            has "// boolean.derive(eq)" show.kk
+            has "// boolean.derive(eq, cmp)" show.kk
 
             # default parameter values, function types, and multi-line parens
             cat > defaults.kk <<'EOF'
@@ -203,10 +204,10 @@
             has "po__derived_show.x" defaults-out.kk
             has "po__derived_show.y" defaults-out.kk
 
-            # repeated and comma-separated kinds both select show+eq
-            $derive -d show -d eq -i "$sample" -o repeated.kk
+            # repeated and comma-separated kinds both select show+eq+cmp
+            $derive -d show -d eq -d cmp -i "$sample" -o repeated.kk
             diff "$expected" repeated.kk || fail "repeated -d"
-            $derive --derivable=show,eq -i "$sample" -o comma.kk
+            $derive --derivable=show,eq,cmp -i "$sample" -o comma.kk
             diff "$expected" comma.kk || fail "comma -d"
 
             # verbosity: -V info, -V2 / -V 2 / -V=2 debug, -q silences

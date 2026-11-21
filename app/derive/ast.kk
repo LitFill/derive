@@ -2,21 +2,26 @@
 // Derivable kinds
 //========================================
 
+import util
+
 pub type derivable
   Show
   Eq
+  Cmp
 
-pub val all-derivables : list<derivable> = [Show, Eq]
+pub val all-derivables : list<derivable> = [Show, Eq, Cmp]
 
 pub fun derivable/show(d : derivable) : string
   match d
     Show -> "Show"
-    Eq -> "Eq"
+    Eq   -> "Eq"
+    Cmp  -> "Cmp"
 
 pub fun derivable/name(d : derivable) : string
   match d
     Show -> "show"
-    Eq -> "eq"
+    Eq   -> "eq"
+    Cmp  -> "cmp"
 
 //========================================
 // Simple ASTs
@@ -30,11 +35,7 @@ pub fun mk-ty(?name, ?tyargs)
   Ty(name, tyargs)
 
 pub fun ty/show(Ty(nm : string, tvs : list<ty>)) : div string
-  "Ty(name="
-  ++ nm.string/show
-  ++ ", tyvars="
-  ++ tvs.list/show(ty/show)
-  ++ ")"
+  "Ty(name=%1, tyvars=%2)"%^[nm.string/show, tvs.show(_.ty/show)]
 
 pub fun ty/to-name(t : ty) : string
   ty-list/to-name([t], ", ")
@@ -55,11 +56,7 @@ pub fun mk-field(?name, ?ty)
   Field(name, ty)
 
 pub fun field/show(Field(nm : string, t : ty))
-  "Field(name="
-  ++ nm.string/show
-  ++ ", ty="
-  ++ t.ty/show
-  ++ ")"
+  "Field(name=%1, ty=%2)"%^[nm.string/show, t.ty/show]
 
 pub struct type-con
   name : string
@@ -69,11 +66,7 @@ pub fun mk-type-con(?name, ?args)
   Type-con(name, args)
 
 pub fun type-con/show(Type-con(nm : string, args : list<field>)) : div string
-  "Type-con(name="
-  ++ nm.string/show
-  ++ ", args="
-  ++ args.list/show(field/show)
-  ++ ")"
+  "Type-con(name=%1, args=%2)"%^[nm.string/show, args.show(_.field/show)]
 
 pub struct type-data
   name      : string
@@ -84,13 +77,7 @@ pub fun mk-type-data(?name, ?tyargs, ?tycons)
   Type-data(name, tyargs, tycons)
 
 pub fun type-data/show(Type-data(nm, tvs, tcs))
-  "Type-data(name="
-  ++ nm.show
-  ++ ", tyvars="
-  ++ tvs.show
-  ++ ", type-cons="
-  ++ tcs.show
-  ++ ")"
+  "Type-data(name=%1, tyvars=%2, type-cons=%3)"%^[nm.show, tvs.show, tcs.show]
 
 pub struct struct-data
   name   : string
@@ -101,13 +88,11 @@ pub fun mk-struct-data(?name, ?tyargs, ?fields)
   Struct-data(name, tyargs, fields)
 
 pub fun struct-data/show(Struct-data(nm : string, tvs : list<string>, fs : list<field>)) : div string
-  "Struct-data(name="
-  ++ nm.string/show
-  ++ ", tyvars="
-  ++ tvs.list/show(string/show)
-  ++ ", fields="
-  ++ fs.list/show(field/show)
-  ++")"
+  "Struct-data(name=%1, tyvars=%2, fields=%3)"%^[
+    nm.string/show,
+    tvs.show(_.string/show),
+    fs.show(_.field/show)
+  ]
 
 //========================================
 // DSLs

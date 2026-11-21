@@ -26,19 +26,13 @@ fun name-p ()
   nm
 
 // Optionally consume declaration modifiers (`pub`, `abstract`, `value`).
-fun ppub()
-  token("pub").ignore
-
-fun pabstract()
-  token("abstract").ignore
-
-fun pvalue()
-  token("value").ignore
-
 fun pmods()
-  optional((), ppub)
-  optional((), pabstract)
-  optional((), pvalue)
+  optional(())
+    token("pub").ignore
+  optional(())
+    token("abstract").ignore
+  optional(())
+    token("value").ignore
 
 // True at a top-level field separator inside a parenthesized field list.
 fun is-field-sep(c : char) : bool
@@ -57,34 +51,30 @@ fun skip-string()
   match current-input().next
     Nothing -> ()
     Just((c, rest)) ->
-      satisfy(fn(_ : sslice) Just((c, rest)))
+      satisfy fn(_) Just((c, rest))
       if c == '\\' then
         match current-input().next
           Nothing -> ()
           Just((c2, rest2)) ->
             satisfy(fn(_ : sslice) Just((c2, rest2)))
             skip-string()
-      elif c == '"' then
-        ()
-      else
-        skip-string()
+      elif c == '"' then ()
+      else skip-string()
 
 // Consume a character literal body (the opening quote is already consumed).
 fun skip-char()
   match current-input().next
     Nothing -> ()
     Just((c, rest)) ->
-      satisfy(fn(_ : sslice) Just((c, rest)))
+      satisfy fn(_) Just((c, rest))
       if c == '\\' then
         match current-input().next
           Nothing -> ()
           Just((c2, rest2)) ->
-            satisfy(fn(_ : sslice) Just((c2, rest2)))
+            satisfy fn(_) Just((c2, rest2))
             skip-char()
-      elif c == '\'' then
-        ()
-      else
-        skip-char()
+      elif c == '\'' then ()
+      else skip-char()
 
 // Consume a default value up to a top-level `stop` character (or EOL/EOF).
 // Delimiters and literals are skipped so separators inside them do not count.
@@ -92,10 +82,9 @@ fun skip-default(stop : (char) -> bool, depth : int)
   match current-input().next
     Nothing -> ()
     Just((c, rest)) ->
-      if depth == 0 && stop(c) then
-        ()
+      if depth == 0 && stop(c) then ()
       else
-        satisfy(fn(_ : sslice) Just((c, rest)))
+        satisfy fn(_) Just((c, rest))
         if c == '"' then
           skip-string()
         elif c == '\'' then
@@ -103,7 +92,7 @@ fun skip-default(stop : (char) -> bool, depth : int)
         val depth' =
           if c == '(' || c == '[' || c == '{' then
             depth + 1
-          else if c == ')' || c == ']' || c == '}' then
+          elif c == ')' || c == ']' || c == '}' then
             if depth > 0 then depth - 1 else depth
           else
             depth
@@ -114,7 +103,7 @@ fun skip-angle-acc(depth : int)
   match current-input().next
     Nothing -> ()
     Just((c, rest)) ->
-      satisfy(fn(_ : sslice) Just((c, rest)))
+      satisfy fn(_) Just((c, rest))
       if c == '<' then
         skip-angle-acc(depth + 1)
       elif c == '>' then
@@ -137,10 +126,12 @@ fun pty()
   else
     atom
 
+fun comma() token(",")
+
 fun pty-atom()
   if peek-string("(") then
     token("(")
-    val tys = pty.sep-by { token(",") }
+    val tys = pty.sep-by(comma)
     token(")")
     match tys
       Cons(t, Nil) -> t
@@ -149,12 +140,12 @@ fun pty-atom()
     val name = name-p()
     val tyargs1 = [].optional
       token("<")
-      val args = pty.sep-by { token(",") }
+      val args = pty.sep-by(comma)
       token(">")
       args
     val tyargs2 = [].optional
       token("(")
-      val args = pty.sep-by { token(",") }
+      val args = pty.sep-by(comma)
       token(")")
       if args.is-empty then [Ty("", [])] else args
     val tyargs = tyargs1 ++ tyargs2
@@ -184,7 +175,7 @@ pub fun ptype()
   val name = name-p()
   val tyargs = [].optional
       token("<")
-      val args = name-p.sep-by { token(",") }
+      val args = name-p.sep-by(comma)
       token(">")
       args
   val tycons = many(ptycon)
@@ -194,8 +185,7 @@ fun ptycon()
   val name = name-p()
   val args = [].optional
       token("(")
-      val args = pfield-comma.sep-by
-          token(",")
+      val args = pfield-comma.sep-by(comma)
       token(")")
       args
   mk-type-con()
@@ -207,9 +197,7 @@ pub fun pstruct()
   val tyargs =
       with [].optional
       token("<")
-      val args =
-          with name-p.sep-by
-          token(",")
+      val args = name-p.sep-by(comma)
       token(">")
       args
   val fields = pparamfield || ({many(pfield-line)})
@@ -218,11 +206,14 @@ pub fun pstruct()
 fun pparamfield()
   with lex
   token("(")
-  val fs =
-      with pfield-comma.sep-by
-      token(",")
+  val fs = pfield-comma.sep-by(comma)
   token(")")
   fs
 
 pub fun run(p : parser<e, a>, s : string) : e either<string, a>
-  parser/run(s, fn() { val x = p(); whitespace0().ignore; eof(); x })
+  with s.parser/run
+  val x = p()
+  whitespace0()
+  eof()
+  x
+

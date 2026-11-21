@@ -1,6 +1,7 @@
 module app/derive/show
 
 import app/derive/ast
+import util
 
 //========================================
 // Show deriving
@@ -12,15 +13,16 @@ fun derive-show-header(nm : string, tvs : list<string>)
   val type-name  = nm.Ty(tvs.map(Ty(_, []))).to-name
   val constraints =
     if tvs.is-empty then "" else
-      ", " ++ tvs.map(fn(tv) "?" ++ tv ++ "/show : " ++ tv ++ " -> string").join(", ")
+      ", " ++ tvs.map(fn(tv) "?%1/show : %1 -> string"%^[tv]).join(", ")
 
   (short-name,
    type-name,
-   "pub fun "
-   ++ nm ++ "/show("
-   ++ short-name ++ " : " ++ type-name
-   ++ constraints
-   ++ ")\n")
+   "pub fun %1/show(%2 : %3%4)\n"%^[
+     nm,
+     short-name,
+     type-name,
+     constraints
+   ])
 
 pub fun type-data/show/derive(Type-data(nm, tvs, tcs))
   val (short-name, _, header) = derive-show-header(nm, tvs)
@@ -46,13 +48,14 @@ pub fun type-data/show/derive(Type-data(nm, tvs, tcs))
 
 pub fun struct-data/show/derive(Struct-data(nm, tvs, fs))
   val (short-name, _, header) = derive-show-header(nm, tvs)
+
   fun make-field-show(f : field)
-      "\""
-      ++ f.name     ++ "=\" ++ "
-      ++ short-name ++ "." ++ f.name ++ ".show"
+      "\"%1=\" ++ %2.%1.show"%^[ f.name, short-name ]
+
   val fields-arg = fs.map(make-field-show).join(" ++ \", \"\n  ++ ")
 
-  header
-  ++ "  \""  ++ nm.capitalize ++ "(\"\n"
-  ++ "  ++ " ++ fields-arg    ++ "\n"
-  ++ "  ++ \")\""
+  "%1  \"%2(\"\n  ++ %3\n  ++ \")\""%^[
+    header,
+    nm.capitalize,
+    fields-arg,
+  ]

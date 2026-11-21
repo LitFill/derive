@@ -7,7 +7,8 @@
 - [x] [P4] Make the --verbose flag receive int instead of only bool, also add
       --quiet (?) [^2]
 - [x] [P3] cannot parse `pub {type|struct}`
-- [ ] add more typeclasses (add, multiply, substract, divide, compare or cmp,
+- [x] add more typeclasses: cmp (Ord) [^4]
+- [ ] add more typeclasses (add, multiply, substract, divide,
       map or functor, map2, mapN eg. mapN(1 to 10), ...)
 - [ ] Koka's newtypes support is lacking, maybe we could help it with derive?
       eg. annotation // derive:newtype or smth?
@@ -25,3 +26,8 @@
     if the derive directive comments use multi typeclass syntax, eg.
     `mytype.derive(eq, show, add)`, and `-d` only wants `show`, then the
     directive comment should be changed to `mytype.derive(eq, add)`.
+
+[^4]:
+    cmp derives `type-name/cmp(t1, t2) : order` and `type-name/(<=>)`.
+    Constructors are ordered by declaration; struct fields are compared
+    left to right with short-circuit on non-Eq.

@@ -24,13 +24,13 @@ pub struct myflags
 
 pub fun myflags/show(m : myflags) : string
   "Myflags("
-  ++ "verbosity="  ++ m.verbosity.show          ++ ", "
-  ++ "version="    ++ m.version.show           ++ ", "
-  ++ "help="       ++ m.help.show              ++ ", "
-  ++ "dry-run="    ++ m.dry-run.show           ++ ", "
-  ++ "input="      ++ m.input.show           ++ ", "
-  ++ "output="     ++ m.output.show          ++ ", "
-  ++ "list="       ++ m.list.show              ++ ", "
+  ++ "verbosity="  ++ m.verbosity.show              ++ ", "
+  ++ "version="    ++ m.version.show                ++ ", "
+  ++ "help="       ++ m.help.show                   ++ ", "
+  ++ "dry-run="    ++ m.dry-run.show                ++ ", "
+  ++ "input="      ++ m.input.show                  ++ ", "
+  ++ "output="     ++ m.output.show                 ++ ", "
+  ++ "list="       ++ m.list.show                   ++ ", "
   ++ "derivables=" ++ derivables-show(m.derivables) ++ ", "
   ++ "errors="     ++ m.errors.show
   ++ ")"
@@ -77,18 +77,19 @@ val flags-spec : list<flag<myflags>>
   = [ Flag( "i",  ["input"],  Req(set-input,  "file"),  "Input file, could also be given as FILE" ),
       Flag( "o",  ["output"], Req(set-output, "file"),  "Output file (defaults to the input file)" ),
       Flag( "dc", ["derivable", "deriving", "class"],
-            Req(set-derivable, "kinds"), "Comma-separated kinds: show, eq (repeatable)" ),
+            Req(set-derivable, "kinds"), "Comma-separated kinds: show, eq, cmp (repeatable)" ),
       Flag( "V",  ["verbose"], Opt(set-verbosity, "N"), "Verbose output (N: 1 info, 2 debug, 3 trace)" ),
       Flag( "q",  ["quiet"],   Bool(set-quiet),         "Errors only" ),
       Flag( "r",  ["dry-run"], Bool(set-dry-run),       "Print result without writing" ),
-      Flag( "l",  ["list"],    Bool(set-list),         "List supported derivables" ),
+      Flag( "l",  ["list"],    Bool(set-list),          "List supported derivables" ),
       Flag( "v",  ["version"], Bool(set-version),       "Show version" ),
       Flag( "h?", ["help"],    Bool(set-help),          "Show this message" ),
     ]
 
 val usage-header : string
-  = "derive - auto derive functions for types and structs in koka.\n"
-  ++ "Usage: derive [options] FILE\n\nOptions:"
+  =  "derive - auto derive functions for types and structs in koka.\n"
+  ++ "Usage: derive [options] FILE\n\n"
+  ++ "Options:"
 
 // Generated from `flags-spec`, so it cannot drift away from what is accepted.
 pub fun usage-text() : string

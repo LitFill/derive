@@ -2,6 +2,8 @@ module app/derive/eq
 
 import app/derive/ast
 
+import util
+
 //========================================
 // Eq deriving
 //========================================
@@ -14,19 +16,21 @@ fun derive-eq-header(nm : string, tvs : list<string>)
   val type-name = nm.Ty(tvs.map(Ty(_, []))).to-name
   val constraints =
     if tvs.is-empty then "" else
-      ", " ++ tvs.map(fn(tv) "?" ++ tv ++ "/(==) : (" ++ tv ++ ", " ++ tv ++ ") -> bool").join(", ")
+      ", " ++ tvs.map("?%1/(==) : (%1, %1) -> bool"%^[_]).join(", ")
 
-  "pub fun " ++ nm ++ "/eq("
-  ++ arg1 ++ " : " ++ type-name ++ ", "
-  ++ arg2 ++ " : " ++ type-name
-  ++ constraints ++ ")\n"
+  "pub fun %1/eq(%2 : %3, %4 : %3%5)\n"%^[
+    nm, arg1,
+    type-name, arg2,
+    constraints
+  ]
 
 fun derive-eq-op-header(nm : string, tvs : list<string>)
   val type-name = nm.Ty(tvs.map(Ty(_, []))).to-name
   val constraints =
     if tvs.is-empty then "" else
-      ", " ++ tvs.map(fn(tv) "?" ++ tv ++ "/(==) : (" ++ tv ++ ", " ++ tv ++ ") -> bool").join(", ")
-  "pub fun " ++ nm ++ "/(==)(x : " ++ type-name ++ ", y : " ++ type-name ++ constraints ++ ")\n"
+      ", " ++ tvs.map("?%1/(==) : (%1, %1) -> bool"%^[_]).join(", ")
+
+  "pub fun %1/(==)(x : %2, y : %2%3)\n"%^[ nm, type-name, constraints ]
 
 pub fun type-data/eq/derive(Type-data(nm, tvs, tcs))
   val short-name' = nm.slice.take(2).string || "x"
@@ -37,13 +41,13 @@ pub fun type-data/eq/derive(Type-data(nm, tvs, tcs))
   val op-header = derive-eq-op-header(nm, tvs)
   fun make-var-list(n : int, pre : string) : string
     if n == 0 then "" else
-      range/list(1, n).map(fn(i) pre ++ i.show).join(", ")
+      list(1, n, fn(i : int) pre ++ i.show).join(", ")
   fun var-cmp(i : int, field-ty : ty) : string
     val xi = arg1 ++ i.show
     val yi = arg2 ++ i.show
     // Self-referential field: use the generated eq function
     if field-ty.name == nm
-      then nm ++ "/eq(" ++ xi ++ ", " ++ yi ++ ")"
+      then "%1/eq(%2, %3)"%^[nm, xi, yi]
       else xi ++ " == " ++ yi
   fun make-var-cmp(n : int, args : list<field>) : string
     if n == 0 then "True" else
@@ -54,18 +58,18 @@ pub fun type-data/eq/derive(Type-data(nm, tvs, tcs))
     val xs = make-var-list(n, arg1)
     val ys = make-var-list(n, arg2)
     val pat = if n == 0
-      then "(" ++ c.name ++ ", " ++ c.name ++ ")"
-      else "(" ++ c.name ++ "(" ++ xs ++ "), " ++ c.name ++ "(" ++ ys ++ "))"
+      then "(%1, %1)"%^[c.name]
+      else "(%1(%2), %1(%3))"%^[c.name, xs, ys]
     val body = make-var-cmp(n, args)
-    "    " ++ pat ++ " -> " ++ body
+    "    %1 -> %2"%^[pat, body]
 
   header
-  ++ "  match (" ++ arg1 ++ ", " ++ arg2 ++ ")\n"
+  ++ "  match (%1, %2)\n"%^[arg1, arg2]
   ++ tcs.map(make-branch).join("\n") ++ "\n"
   ++ "    _ -> False\n"
   ++ "\n"
   ++ op-header
-  ++ "  " ++ nm ++ "/eq(x, y)"
+  ++ "  %1/eq(x, y)"%^[nm]
 
 pub fun struct-data/eq/derive(Struct-data(nm, tvs, fs))
   val short-name' = nm.slice.take(2).string || "x"
@@ -77,13 +81,9 @@ pub fun struct-data/eq/derive(Struct-data(nm, tvs, fs))
   val cmp = fs.map(fn(Field(fn_name, fty))
       // Self-referential field: use the generated eq function
       if fty.name == nm
-        then nm ++ "/eq(" ++ arg1 ++ "." ++ fn_name ++ ", " ++ arg2 ++ "." ++ fn_name ++ ")"
-        else arg1 ++ "." ++ fn_name ++ " == " ++ arg2 ++ "." ++ fn_name
+        then "%1/eq(%2.%3, %4.%3)"%^[nm, arg1, fn_name, arg2]
+        else "%1.%3 == %2.%3"%^[arg1, arg2, fn_name]
     ).join("\n  && ")
   val body = cmp || "True"
 
-  header
-  ++ "  " ++ body ++ "\n"
-  ++ "\n"
-  ++ op-header
-  ++ "  " ++ nm ++ "/eq(x, y)"
+  "%1  %2\n\n%3  %4/eq(x, y)"%^[header, body, op-header, nm]

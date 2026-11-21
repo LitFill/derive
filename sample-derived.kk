@@ -21,6 +21,18 @@ pub fun boolean/eq(bo__derived_eq_1 : boolean, bo__derived_eq_2 : boolean)
 pub fun boolean/(==)(x : boolean, y : boolean)
   boolean/eq(x, y)
 
+pub fun boolean/cmp(bo__derived_cmp_1 : boolean, bo__derived_cmp_2 : boolean)
+  match (bo__derived_cmp_1, bo__derived_cmp_2)
+    (Benar, Benar) -> Eq
+    (Benar, Salah) -> Lt
+    (Benar, Mungkin) -> Lt
+    (Salah, Salah) -> Eq
+    (Salah, Mungkin) -> Lt
+    (Mungkin, Mungkin) -> Eq
+
+pub fun boolean/(<=>)(x : boolean, y : boolean)
+  boolean/cmp(x, y)
+
 struct vector3
   x : int
   y : int
@@ -41,6 +53,18 @@ pub fun vector3/eq(ve__derived_eq_1 : vector3, ve__derived_eq_2 : vector3)
 pub fun vector3/(==)(x : vector3, y : vector3)
   vector3/eq(x, y)
 
+pub fun vector3/cmp(ve__derived_cmp_1 : vector3, ve__derived_cmp_2 : vector3)
+  match int/cmp(ve__derived_cmp_1.x, ve__derived_cmp_2.x)
+    Lt -> Lt
+    Gt -> Gt
+    Eq -> match int/cmp(ve__derived_cmp_1.y, ve__derived_cmp_2.y)
+            Lt -> Lt
+            Gt -> Gt
+            Eq -> int/cmp(ve__derived_cmp_1.v, ve__derived_cmp_2.v)
+
+pub fun vector3/(<=>)(x : vector3, y : vector3)
+  vector3/cmp(x, y)
+
 struct nelist<a>
   head : a
   tail : list<a>
@@ -57,6 +81,15 @@ pub fun nelist/eq(ne__derived_eq_1 : nelist<a>, ne__derived_eq_2 : nelist<a>, ?a
 
 pub fun nelist/(==)(x : nelist<a>, y : nelist<a>, ?a/(==) : (a, a) -> bool)
   nelist/eq(x, y)
+
+pub fun nelist/cmp(ne__derived_cmp_1 : nelist<a>, ne__derived_cmp_2 : nelist<a>, ?a/cmp : (a, a) -> order)
+  match a/cmp(ne__derived_cmp_1.head, ne__derived_cmp_2.head)
+    Lt -> Lt
+    Gt -> Gt
+    Eq -> list/cmp(ne__derived_cmp_1.tail, ne__derived_cmp_2.tail)
+
+pub fun nelist/(<=>)(x : nelist<a>, y : nelist<a>, ?a/cmp : (a, a) -> order)
+  nelist/cmp(x, y)
 
 type alist<a, b>
   Nil
@@ -76,6 +109,18 @@ pub fun alist/eq(al__derived_eq_1 : alist<a, b>, al__derived_eq_2 : alist<a, b>,
 pub fun alist/(==)(x : alist<a, b>, y : alist<a, b>, ?a/(==) : (a, a) -> bool, ?b/(==) : (b, b) -> bool)
   alist/eq(x, y)
 
+pub fun alist/cmp(al__derived_cmp_1 : alist<a, b>, al__derived_cmp_2 : alist<a, b>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order)
+  match (al__derived_cmp_1, al__derived_cmp_2)
+    (Nil, Nil) -> Eq
+    (Nil, Cons(al__derived_cmp_21, al__derived_cmp_22)) -> Lt
+    (Cons(al__derived_cmp_11, al__derived_cmp_12), Cons(al__derived_cmp_21, al__derived_cmp_22)) -> match tmap/cmp(al__derived_cmp_11, al__derived_cmp_21)
+        Lt -> Lt
+        Gt -> Gt
+        Eq -> alist/cmp(al__derived_cmp_12, al__derived_cmp_22)
+
+pub fun alist/(<=>)(x : alist<a, b>, y : alist<a, b>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order)
+  alist/cmp(x, y)
+
 struct tmap<a, b>
   front : a
   back  : b
@@ -92,6 +137,15 @@ pub fun tmap/eq(tm__derived_eq_1 : tmap<a, b>, tm__derived_eq_2 : tmap<a, b>, ?a
 
 pub fun tmap/(==)(x : tmap<a, b>, y : tmap<a, b>, ?a/(==) : (a, a) -> bool, ?b/(==) : (b, b) -> bool)
   tmap/eq(x, y)
+
+pub fun tmap/cmp(tm__derived_cmp_1 : tmap<a, b>, tm__derived_cmp_2 : tmap<a, b>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order)
+  match a/cmp(tm__derived_cmp_1.front, tm__derived_cmp_2.front)
+    Lt -> Lt
+    Gt -> Gt
+    Eq -> b/cmp(tm__derived_cmp_1.back, tm__derived_cmp_2.back)
+
+pub fun tmap/(<=>)(x : tmap<a, b>, y : tmap<a, b>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order)
+  tmap/cmp(x, y)
 
 struct extra-long-tuple<a, b, c, d, e, f, g, h>
   alice : a
@@ -128,6 +182,33 @@ pub fun extra-long-tuple/eq(ex__derived_eq_1 : extra-long-tuple<a, b, c, d, e, f
 pub fun extra-long-tuple/(==)(x : extra-long-tuple<a, b, c, d, e, f, g, h>, y : extra-long-tuple<a, b, c, d, e, f, g, h>, ?a/(==) : (a, a) -> bool, ?b/(==) : (b, b) -> bool, ?c/(==) : (c, c) -> bool, ?d/(==) : (d, d) -> bool, ?e/(==) : (e, e) -> bool, ?f/(==) : (f, f) -> bool, ?g/(==) : (g, g) -> bool, ?h/(==) : (h, h) -> bool)
   extra-long-tuple/eq(x, y)
 
+pub fun extra-long-tuple/cmp(ex__derived_cmp_1 : extra-long-tuple<a, b, c, d, e, f, g, h>, ex__derived_cmp_2 : extra-long-tuple<a, b, c, d, e, f, g, h>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order, ?c/cmp : (c, c) -> order, ?d/cmp : (d, d) -> order, ?e/cmp : (e, e) -> order, ?f/cmp : (f, f) -> order, ?g/cmp : (g, g) -> order, ?h/cmp : (h, h) -> order)
+  match a/cmp(ex__derived_cmp_1.alice, ex__derived_cmp_2.alice)
+    Lt -> Lt
+    Gt -> Gt
+    Eq -> match b/cmp(ex__derived_cmp_1.bob, ex__derived_cmp_2.bob)
+            Lt -> Lt
+            Gt -> Gt
+            Eq -> match c/cmp(ex__derived_cmp_1.charlie, ex__derived_cmp_2.charlie)
+                        Lt -> Lt
+                        Gt -> Gt
+                        Eq -> match d/cmp(ex__derived_cmp_1.daniel, ex__derived_cmp_2.daniel)
+                                        Lt -> Lt
+                                        Gt -> Gt
+                                        Eq -> match e/cmp(ex__derived_cmp_1.edward, ex__derived_cmp_2.edward)
+                                                            Lt -> Lt
+                                                            Gt -> Gt
+                                                            Eq -> match f/cmp(ex__derived_cmp_1.frank, ex__derived_cmp_2.frank)
+                                                                                    Lt -> Lt
+                                                                                    Gt -> Gt
+                                                                                    Eq -> match g/cmp(ex__derived_cmp_1.gordon, ex__derived_cmp_2.gordon)
+                                                                                                                Lt -> Lt
+                                                                                                                Gt -> Gt
+                                                                                                                Eq -> h/cmp(ex__derived_cmp_1.henry, ex__derived_cmp_2.henry)
+
+pub fun extra-long-tuple/(<=>)(x : extra-long-tuple<a, b, c, d, e, f, g, h>, y : extra-long-tuple<a, b, c, d, e, f, g, h>, ?a/cmp : (a, a) -> order, ?b/cmp : (b, b) -> order, ?c/cmp : (c, c) -> order, ?d/cmp : (d, d) -> order, ?e/cmp : (e, e) -> order, ?f/cmp : (f, f) -> order, ?g/cmp : (g, g) -> order, ?h/cmp : (h, h) -> order)
+  extra-long-tuple/cmp(x, y)
+
 fun bool/dec(lf, rg, ?cond)
   if cond then lf else rg
 
@@ -149,3 +230,9 @@ pub fun newtype/eq(ne__derived_eq_1 : newtype, ne__derived_eq_2 : newtype)
 
 pub fun newtype/(==)(x : newtype, y : newtype)
   newtype/eq(x, y)
+
+pub fun newtype/cmp(ne__derived_cmp_1 : newtype, ne__derived_cmp_2 : newtype)
+  int/cmp(ne__derived_cmp_1.value, ne__derived_cmp_2.value)
+
+pub fun newtype/(<=>)(x : newtype, y : newtype)
+  newtype/cmp(x, y)

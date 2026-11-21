@@ -8,6 +8,7 @@ Currently supports:
 
 - Show: by `pub fun type-name/show(t : type-name) // : string` (maybe \<div>)
 - Eq: by `pub fun type-name/eq(t1, t2) // : bool` (maybe \<div>), and operator (==)
+- Cmp: by `pub fun type-name/cmp(t1, t2) : order`, and operator (`<=>`). Constructors are ordered by declaration; struct fields are compared left to right with short-circuit on non-`Eq`.
 
 ## Usage
 
@@ -18,7 +19,7 @@ Usage: derive [options] FILE
 Options:
  -i<file>             --input=file                                      Input file, could also be given as FILE
  -o<file>             --output=file                                     Output file (defaults to the input file)
- -d<kinds> -c<kinds>  --derivable=kinds --deriving=kinds --class=kinds  Comma-separated kinds: show, eq (repeatable)
+ -d<kinds> -c<kinds>  --derivable=kinds --deriving=kinds --class=kinds  Comma-separated kinds: show, eq, cmp (repeatable)
  -V[N]                --verbose[=N]                                     Verbose output (N: 1 info, 2 debug, 3 trace)
  -q                   --quiet                                           Errors only
  -r                   --dry-run                                         Print result without writing

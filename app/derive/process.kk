@@ -9,6 +9,7 @@ import app/derive/ast
 import app/derive/syntax
 import app/derive/show
 import app/derive/eq
+import app/derive/cmp
 
 //========================================
 // Definition processing pipeline
@@ -28,9 +29,9 @@ fun derivable-of-name(s : string) : maybe<derivable>
 // Strip declaration modifiers so the scanner recognizes `pub`, `abstract`,
 // and `value` in any of the usual orders.
 fun strip-attrs(s : string) : string
-  val s1 = if s.starts-with("pub ").is-just then s.slice.drop(4).string else s
+  val s1 = if s.starts-with("pub ").is-just       then s.slice.drop(4).string  else s
   val s2 = if s1.starts-with("abstract ").is-just then s1.slice.drop(9).string else s1
-  val s3 = if s2.starts-with("value ").is-just then s2.slice.drop(6).string else s2
+  val s3 = if s2.starts-with("value ").is-just    then s2.slice.drop(6).string else s2
   s3
 
 // Delimiter delta for a line, ignoring string and character literals.
@@ -76,20 +77,20 @@ fun delim-delta(s : string) : int
   delim-scan(s.list, 0, 0)
 
 pub fun extract-derive-info(line : string) : (string, list<derivable>)
-  match line.split(sep=".derive(")
+  match line.split(".derive(")
     Cons(part, Cons(rest, Nil)) ->
-      val content = match rest.split(sep=")")
+      val content = match rest.split(")")
         Cons(head, _) -> head
         Nil -> ""
-      val ds = content.split(sep=",").map-maybe(derivable-of-name)
+      val ds = content.split(",").map-maybe(derivable-of-name)
       (part.list.drop(2).string.trim, ds)
     _ -> ("", [])
 
 // Raw content between `.derive(` and `)`, e.g. "show, eq"
 fun derive-raw(line : string) : string
-  match line.split(sep=".derive(")
+  match line.split(".derive(")
     Cons(_, Cons(rest, Nil)) ->
-      match rest.split(sep=")")
+      match rest.split(")")
         Cons(head, _) -> head
         Nil -> ""
     _ -> ""
@@ -162,12 +163,14 @@ fun derive-one(st : def-context, k : derivable, ix : int, nm : string) : list<de
   match st
     Type-context(td) | td.name == nm ->
       match k
-        Show   -> [DerivedTypeDef(td, ix, td.show/derive)]
-        ast/Eq -> [DerivedTypeDef(td, ix, td.eq/derive)]
+        Show    -> [DerivedTypeDef(td, ix, td.show/derive)]
+        ast/Eq  -> [DerivedTypeDef(td, ix, td.eq/derive)]
+        ast/Cmp -> [DerivedTypeDef(td, ix, td.cmp/derive)]
     Struct-context(sd) | sd.name == nm ->
       match k
-        Show   -> [DerivedStructDef(sd, ix, sd.show/derive)]
-        ast/Eq -> [DerivedStructDef(sd, ix, sd.eq/derive)]
+        Show    -> [DerivedStructDef(sd, ix, sd.show/derive)]
+        ast/Eq  -> [DerivedStructDef(sd, ix, sd.eq/derive)]
+        ast/Cmp -> [DerivedStructDef(sd, ix, sd.cmp/derive)]
     _ -> []
 
 fun match-step(st : def-context, d : definition, cli : list<derivable>) : (list<definition>, def-context)
@@ -204,13 +207,14 @@ pub fun reassemble(defs : list<definition>) : string
       DerivedTypeDef(_, _, _)    -> True
       DerivedStructDef(_, _, _)  -> True
       _                          -> False
+
     val s = match d
-      Type-def(_data, block)                -> block ++ "\n"
-      Struct-def(_data, block)              -> block ++ "\n"
-      DerivedTypeDef(_data, _after, code)   -> code  ++ "\n"
-      DerivedStructDef(_data, _after, code) -> code  ++ "\n"
+      Type-def(_data, block)                    -> block ++ "\n"
+      Struct-def(_data, block)                  -> block ++ "\n"
+      DerivedTypeDef(_data, _after, code)       -> code  ++ "\n"
+      DerivedStructDef(_data, _after, code)     -> code  ++ "\n"
       Derive-line(_line, _name, _ds, _rawline)  -> ""
-      Other(content)                        -> content ++ "\n"
+      Other(content)                            -> content ++ "\n"
     ((if is-derived && prev-derived then "\n" else "") ++ s, is-derived)
   val (_, lines) = defs.foldl((False, [])) fn((prev, acc), d)
     val (s, cur) = piece(d, prev)
