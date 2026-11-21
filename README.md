@@ -31,3 +31,22 @@ A flag value may be given attached (`-ifile.kk`, `--input=file.kk`) or as the
 next argument (`-i file.kk`, `--input file.kk`); both spellings work. Long
 names may be abbreviated as long as it stays unambiguous, `--` ends the flags,
 and `--no-<name>` turns off a boolean flag. See `derive --help`.
+
+## Development
+
+This project is managed by [koki](https://github.com/LitFill/koki): `flake.nix`
+carries the `# koki:inputs` and `# koki:libs` marker regions that `koki add`
+writes to, so dependencies stay in step with the compiler flags and with the
+`koka.json` that editors read.
+
+| command | what it does |
+|---|---|
+| `koki dev` | enter a shell with koka; writes `koka.json` |
+| `koki build` | `nix build` — binary lands in `./result` |
+| `koki run -- -i sample.kk` | build and run; `--` keeps the rest for derive |
+| `koki check` | `nix flake check` — sample diff plus the CLI regression matrix |
+| `koki add nel-kk` | add a Koka library as a flake input |
+| `koki info` / `koki doctor` | what koki knows about the project / toolchain check |
+
+A release bumps the version in both `flake.nix` and `app/main.kk`
+(`derive-cli` asserts the two agree) and tags the commit, e.g. `v1.2.0`.

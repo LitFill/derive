@@ -1,3 +1,12 @@
-.koka
-build
+# Koka build output
+.koka/
+
+# Written by the dev shell on every `nix develop`
+koka.json
+
+# Nix
 result
+result-*
+
+# Compiled binaries
+derive
