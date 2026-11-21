@@ -49,5 +49,6 @@ writes to, so dependencies stay in step with the compiler flags and with the
 | `koki add nel-kk` | add a Koka library as a flake input |
 | `koki info` / `koki doctor` | what koki knows about the project / toolchain check |
 
-A release bumps the version in both `flake.nix` and `app/main.kk`
-(`derive-cli` asserts the two agree) and tags the commit, e.g. `v1.2.0`.
+A release bumps the `version` in `flake.nix` (the single source of truth;
+`app/version.kk` is substituted at build time) and tags the commit, e.g.
+`v1.3.0`.

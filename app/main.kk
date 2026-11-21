@@ -6,6 +6,7 @@ import std/os/path
 
 import app/cli
 import app/derive
+import app/version
 
 extern set-exit-code( code : int ) : () {
   c inline "(exit(kk_integer_clamp32(#1,kk_context())), kk_Unit)"
@@ -15,7 +16,6 @@ extern set-exit-code( code : int ) : () {
 // Main handler
 //========================================
 
-val version-string = "derive: v1.2.0"
 
 // What the flags ask us to do; the order here is the precedence.
 type cli-action

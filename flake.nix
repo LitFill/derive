@@ -12,6 +12,8 @@
   outputs =
     { self, nixpkgs, ... }:
     let
+      version = "1.3.0";
+
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -43,7 +45,7 @@
       # build recipe lives in a single place.
       mkDerive = pkgs: pkgs.stdenv.mkDerivation {
         pname = "derive";
-        version = "1.2.0";
+        version = version;
         src = pkgs.lib.cleanSourceWith {
           src = self;
           filter = path: type:
@@ -60,6 +62,7 @@
 
         buildPhase = ''
           runHook preBuild
+          substituteInPlace app/version.kk --replace '@VERSION@' '${version}'
           koka -o derive ${kokaLibArgs pkgs} app/main.kk
           runHook postBuild
         '';
@@ -140,7 +143,7 @@
             }
 
             # --version and --list
-            [ "$($derive --version)" = "derive: v1.2.0" ] || fail "--version"
+            [ "$($derive --version)" = "derive: v1.3.0" ] || fail "--version"
             [ "$($derive --list)" = "show, eq, cmp" ] || fail "--list"
             $derive --version > /dev/null
             $derive --list > /dev/null
