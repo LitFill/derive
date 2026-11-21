@@ -37,48 +37,55 @@
       # editors and the Koka language server read.
       kokaJson = pkgs:
         ''{"include_dirs":[${builtins.concatStringsSep "," (map (d: "\"${d}\"") (kokaLibsFor pkgs))}]}'';
+      # The one derivation; packages, apps and checks all point at it, so the
+      # build recipe lives in a single place.
+      mkDerive = pkgs: pkgs.stdenv.mkDerivation {
+        pname = "derive";
+        version = "1.2.0";
+        src = pkgs.lib.cleanSourceWith {
+          src = self;
+          filter = path: type:
+            let base = baseNameOf (toString path);
+            in !(builtins.elem base [ "result" "koka.json" ".koka" ]);
+        };
+
+        nativeBuildInputs = with pkgs; [
+          koka
+          stdenv.cc # koka shells out to a C compiler for codegen
+        ];
+
+        strictDeps = true;
+
+        buildPhase = ''
+          runHook preBuild
+          koka -o derive ${kokaLibArgs pkgs} app/main.kk
+          runHook postBuild
+        '';
+
+        installPhase = ''
+          runHook preInstall
+          install -Dm755 derive $out/bin/derive
+          runHook postInstall
+        '';
+
+        meta = with pkgs.lib; {
+          description = "CLI for deriving some useful functions for Koka types and structs";
+          mainProgram = "derive";
+          platforms = platforms.unix;
+        };
+      };
+
     in
     {
 
-      packages = forAllSystems (pkgs: system: rec {
-        derive = pkgs.stdenv.mkDerivation {
-          pname = "derive";
-          version = "1.2.0";
-          src = pkgs.lib.cleanSourceWith {
-            src = self;
-            filter = path: type:
-              let base = baseNameOf (toString path);
-              in !(builtins.elem base [ "result" "koka.json" ".koka" "build" ]);
-          };
-
-          nativeBuildInputs = with pkgs; [
-            koka
-            stdenv.cc # koka shells out to a C compiler for codegen
-          ];
-
-          strictDeps = true;
-
-          buildPhase = ''
-            runHook preBuild
-            koka -o derive ${kokaLibArgs pkgs} app/main.kk
-            runHook postBuild
-          '';
-
-          installPhase = ''
-            runHook preInstall
-            install -Dm755 derive $out/bin/derive
-            runHook postInstall
-          '';
-
-          meta = with pkgs.lib; {
-            description = "CLI for deriving some useful functions for Koka types and structs";
-            mainProgram = "derive";
-            platforms = platforms.unix;
-          };
-        };
-
-        default = derive;
-      });
+      packages = forAllSystems (pkgs: system:
+        let
+          derive = mkDerive pkgs;
+        in
+        {
+          inherit derive;
+          default = derive;
+        });
 
       apps = forAllSystems (pkgs: system: {
         default = {
